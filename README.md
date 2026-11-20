@@ -14,7 +14,7 @@ curl -X POST http://localhost:8081/api/cart/add \
   -d '{"productId":"internet-500"}'
 ```
 
-The response contains an order ID, the supplied product ID, a sample name and price, and a total. The name and price are fixed examples: the tool does not look up products, persist a cart, or place an order. Missing or blank product IDs return HTTP 400. To use the tool with a model, register the `CartTool` bean with a Spring AI chat client; this project does not configure a model or MCP server.
+The response contains an order ID, the supplied product ID, a sample name and price, and a total. The name and price are fixed examples: the tool does not look up products, persist a cart, or place an order. Missing or blank product IDs return HTTP 400. The tool is registered with the Spring AI chat client; it does not require an MCP server.
 
 ## Sample chat endpoint
 
@@ -26,7 +26,14 @@ curl -X POST http://localhost:8081/ai/chat \
   -d '{"prompt":"Tell me about your internet plans"}'
 ```
 
-It returns JSON with a `response` field containing a sample reply. Missing or blank prompts return HTTP 400. This first version does not call an AI model or invoke tools.
+It returns JSON with a `response` field containing the model's reply. Missing or blank prompts return HTTP 400; an AI service failure returns HTTP 502. Set your API key in the environment before starting the service:
+
+```sh
+export OPENAI_API_KEY='your-api-key'
+mvn spring-boot:run
+```
+
+Do not commit the key. The default model is `gpt-4.1-mini`; set `OPENAI_MODEL` to override it. Spring AI can invoke the registered cart and province tools automatically when the model requests them. Tool logs include only recognized sample province and product identifiers; other values are redacted. The cart operation returns a sample order and does not persist or purchase anything.
 
 ## Province-based sample plans
 
@@ -37,4 +44,4 @@ curl 'http://localhost:8081/dynamic/province/products?province=Ontario'
 curl 'http://localhost:8081/dynamic/province/products?province=NU'
 ```
 
-Every province and territory has three sample plans except Nunavut, which returns an empty `products` array with `No service available`. Names and prices are illustrative. Missing, blank, or unrecognized provinces return HTTP 400. The same operation is available as the Spring AI tool `ProvinceProductsTool.getProvinceProducts`; register it with a chat client to use it with a model. The current `/ai/chat` endpoint does not invoke tools.
+Every province and territory has three sample plans except Nunavut, which returns an empty `products` array with `No service available`. Names and prices are illustrative. Missing, blank, or unrecognized provinces return HTTP 400. The same operation is registered as the Spring AI tool `ProvinceProductsTool.getProvinceProducts` for `/ai/chat`.

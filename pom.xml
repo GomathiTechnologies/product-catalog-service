@@ -4,7 +4,11 @@
     <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.5.4</version><relativePath/></parent>
     <groupId>com.example</groupId><artifactId>product-catalog-service</artifactId><version>0.0.1-SNAPSHOT</version>
     <name>product-catalog-service</name>
-    <properties><java.version>17</java.version></properties>
+    <properties><java.version>17</java.version><spring-ai.version>1.0.0</spring-ai.version></properties>
+    <dependencyManagement><dependencies><dependency>
+        <groupId>org.springframework.ai</groupId><artifactId>spring-ai-bom</artifactId>
+        <version>${spring-ai.version}</version><type>pom</type><scope>import</scope>
+    </dependency></dependencies></dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -12,7 +16,7 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-model</artifactId><version>1.0.0</version></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-starter-model-openai</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
     </dependencies>

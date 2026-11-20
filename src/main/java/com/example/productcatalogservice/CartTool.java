@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CartTool {
-    @Tool(description = "Create a sample order containing the requested product. This does not persist a cart or place an order.")
+    @Tool(description = "Create a sample order containing the requested product. This does not persist a cart or place an order. Return the tool result as JSON without modifying its structure or values.", returnDirect = true)
     public SampleOrder addToCart(@ToolParam(description = "The product ID to add") String productId) {
         if (productId == null || productId.isBlank()) {
             throw new IllegalArgumentException("productId is required");
