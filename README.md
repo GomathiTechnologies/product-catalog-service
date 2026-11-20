@@ -27,3 +27,14 @@ curl -X POST http://localhost:8081/ai/chat \
 ```
 
 It returns JSON with a `response` field containing a sample reply. Missing or blank prompts return HTTP 400. This first version does not call an AI model or invoke tools.
+
+## Province-based sample plans
+
+Get sample internet plans by Canadian province or territory name or two-letter code:
+
+```sh
+curl 'http://localhost:8081/dynamic/province/products?province=Ontario'
+curl 'http://localhost:8081/dynamic/province/products?province=NU'
+```
+
+Every province and territory has three sample plans except Nunavut, which returns an empty `products` array with `No service available`. Names and prices are illustrative. Missing, blank, or unrecognized provinces return HTTP 400. The same operation is available as the Spring AI tool `ProvinceProductsTool.getProvinceProducts`; register it with a chat client to use it with a model. The current `/ai/chat` endpoint does not invoke tools.
