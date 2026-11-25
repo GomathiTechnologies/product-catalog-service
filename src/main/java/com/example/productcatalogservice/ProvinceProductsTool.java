@@ -35,7 +35,7 @@ public class ProvinceProductsTool {
         Example: Montreal → Quebec, Toronto → Ontario.
         Nunavut has no service.
         Return the tool result as JSON without modifying its structure or values.
-        """, returnDirect = true)
+        """)
     public ProvinceProducts getProvinceProducts(@ToolParam(description = "Canadian province or territory name or two-letter code") String province) {
         if (province == null || province.isBlank()) throw new IllegalArgumentException("province is required");
         String input = normalize(province);

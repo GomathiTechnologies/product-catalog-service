@@ -20,10 +20,11 @@ class AiConfigTest {
         assertThat(callbacks).extracting(callback -> callback.getToolDefinition().name())
             .containsExactlyInAnyOrder("addToCart", "getProvinceProducts");
         for (ToolCallback callback : callbacks) {
-            assertThat(callback.getToolMetadata().returnDirect()).isTrue();
             if (callback.getToolDefinition().name().equals("addToCart")) {
+                assertThat(callback.getToolMetadata().returnDirect()).isTrue();
                 assertThat(callback.call("{\"productId\":\"internet-500\"}")).contains("internet-500");
             } else {
+                assertThat(callback.getToolMetadata().returnDirect()).isTrue();
                 assertThat(callback.call("{\"province\":\"NU\"}")).contains("No service available");
             }
         }
