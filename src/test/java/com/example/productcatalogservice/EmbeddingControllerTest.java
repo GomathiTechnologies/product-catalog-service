@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class EmbeddingControllerTest {
     private final EmbeddingModel model = mock(EmbeddingModel.class);
     private final MockMvc mvc = MockMvcBuilders.standaloneSetup(
-            new EmbeddingController(new EmbeddingService(model))).build();
+            new EmbeddingController(new EmbeddingService(model, mock(PdfReader.class), new InMemoryVectorStore()))).build();
 
     @Test void returnsVectorForText() throws Exception {
         when(model.embed("Hello")).thenReturn(new float[] {0.5f, -0.25f});

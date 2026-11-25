@@ -36,7 +36,7 @@ curl -X POST http://localhost:8081/ai/embedding \
   -d '{"text":"Business internet"}'
 ```
 
-The response contains `dimensions` and a `vector` array. The service also prints the input text and vector to its console. Set `OPENAI_API_KEY` before starting; `OPENAI_EMBEDDING_MODEL` overrides the default `text-embedding-3-small`. Missing or blank text returns HTTP 400, and a model failure returns HTTP 502.
+The response contains `dimensions` and a `vector` array. The service logs the embedding dimensions; the vector is returned in the response. Set `OPENAI_API_KEY` before starting; `OPENAI_EMBEDDING_MODEL` overrides the default `text-embedding-3-small`. Missing or blank text returns HTTP 400, and a model failure returns HTTP 502.
 
 ## Sample chat endpoint
 
@@ -67,3 +67,39 @@ curl 'http://localhost:8081/dynamic/province/products?province=NU'
 ```
 
 Every province and territory has three sample plans except Nunavut, which returns an empty `products` array with `No service available`. Names and prices are illustrative. Missing, blank, or unrecognized provinces return HTTP 400. The same operation is registered as the Spring AI tool `ProvinceProductsTool.getProvinceProducts` for `/ai/chat`.
+
+## In-memory knowledge search
+
+These endpoints are for local development. Start the service from its project directory with `OPENAI_API_KEY` set. Ingestion and non-empty searches call the configured embedding model and may incur API usage. The store is lost when the service stops; re-ingestion replaces all stored chunks after every embedding succeeds. Changing embedding models requires re-ingestion. Document IDs can change on re-ingestion. The PDF directory is relative to the service working directory.
+
+```sh
+# Check an empty store (or search it without making an embedding request).
+curl http://localhost:8081/ai/knowledge/count
+curl -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"internet"}'
+
+# Ingest, then repeat to verify that the count does not double.
+curl -X POST http://localhost:8081/ai/knowledge/ingest
+curl -X POST http://localhost:8081/ai/knowledge/ingest
+curl http://localhost:8081/ai/knowledge/count
+
+# Inspect all chunks, or replace DOCUMENT_ID with an ID from the response.
+curl http://localhost:8081/ai/knowledge/documents
+curl 'http://localhost:8081/ai/knowledge/documents?includeEmbedding=true'
+curl 'http://localhost:8081/ai/knowledge/documents/DOCUMENT_ID'
+curl 'http://localhost:8081/ai/knowledge/documents/DOCUMENT_ID?includeEmbedding=true'
+curl -i 'http://localhost:8081/ai/knowledge/documents/invalid-id'
+
+# Search examples. Thresholds filter raw cosine scores; tune them for your corpus.
+curl -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"Business internet plans"}'
+curl -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"Can I get a fixed IP address on fibre internet?","topK":3,"similarityThreshold":0.3}'
+curl -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"Free indoor access points"}'
+curl -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"Internet backup during an outage"}'
+curl -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"Installation charges"}'
+curl -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"An elephant in the forest","similarityThreshold":0.3}'
+
+# Validation and clearing the store.
+curl -i -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"internet","topK":0}'
+curl -i -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"internet","similarityThreshold":2}'
+curl -X DELETE http://localhost:8081/ai/knowledge/documents
+curl http://localhost:8081/ai/knowledge/count
+```
