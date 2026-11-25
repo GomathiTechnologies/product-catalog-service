@@ -68,12 +68,24 @@ curl 'http://localhost:8081/dynamic/province/products?province=NU'
 
 Every province and territory has three sample plans except Nunavut, which returns an empty `products` array with `No service available`. Names and prices are illustrative. Missing, blank, or unrecognized provinces return HTTP 400. The same operation is registered as the Spring AI tool `ProvinceProductsTool.getProvinceProducts` for `/ai/chat`.
 
-## In-memory knowledge search
+## PostgreSQL knowledge search
 
-These endpoints are for local development. Start the service from its project directory with `OPENAI_API_KEY` set. Ingestion and non-empty searches call the configured embedding model and may incur API usage. The store is lost when the service stops; re-ingestion replaces all stored chunks after every embedding succeeds. Changing embedding models requires re-ingestion. Document IDs can change on re-ingestion. The PDF directory is relative to the service working directory.
+These endpoints use the `knowledge_vectors` table in PostgreSQL with the pgvector extension. Install pgvector for the running PostgreSQL version and make it available in the target database. The configured database user needs permission to create the extension and table on first startup; alternatively, an administrator can enable `vector` beforehand. The database itself must already exist.
+
+The service defaults to `jdbc:postgresql://localhost:5432/ai-buyflow`, user `postgres`, and password `postgres` for local development. Override these settings as needed:
 
 ```sh
-# Check an empty store (or search it without making an embedding request).
+export DATABASE_URL='jdbc:postgresql://localhost:5432/ai-buyflow'
+export DATABASE_USER='postgres'
+export DATABASE_PASSWORD='postgres'
+export OPENAI_API_KEY='your-api-key'
+mvn spring-boot:run
+```
+
+Spring initializes `knowledge_vectors` at startup without deleting existing data. When the table is empty, the service reads the PDFs and generates embeddings automatically before startup completes. If ingestion fails, startup fails and reports the error. Existing vectors are kept on later starts; use the manual ingestion endpoint below to refresh them after changing the PDFs. Set `knowledge.ingest-on-startup=false` to disable automatic ingestion. The table uses 1,536-dimensional vectors, matching the default `text-embedding-3-small` configuration. A different embedding dimension requires a schema migration and re-ingestion; keep the same embedding model for ingestion and search. These endpoints are for local development. Ingestion and non-empty searches call the embedding model and may incur API usage. Re-ingestion replaces all stored chunks in one transaction after embeddings succeed. Data persists across service restarts. Document IDs can change on re-ingestion. The PDF directory is relative to the service working directory.
+
+```sh
+# Check the store (an empty-store search does not call the embedding API).
 curl http://localhost:8081/ai/knowledge/count
 curl -X POST http://localhost:8081/ai/knowledge/search -H 'Content-Type: application/json' -d '{"query":"internet"}'
 

@@ -3,10 +3,8 @@ package com.example.productcatalogservice;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.stereotype.Component;
 
-@Component
-public class InMemoryVectorStore {
+public class InMemoryVectorStore implements KnowledgeVectorStore {
     private volatile List<VectorDocument> documents = List.of();
 
     public synchronized void replaceAll(List<VectorDocument> replacements) {
@@ -30,6 +28,11 @@ public class InMemoryVectorStore {
                 .filter(result -> threshold == null || result.score() >= threshold)
                 .sorted(Comparator.comparingDouble(SearchResult::score).reversed())
                 .limit(topK).toList();
+    }
+
+    @Override
+    public List<SearchResult> search(float[] query, int topK, Double threshold) {
+        return search(getAll(), query, topK, threshold);
     }
 
     private static double cosine(float[] a, float[] b) {

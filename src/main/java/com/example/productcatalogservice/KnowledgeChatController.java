@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -60,6 +61,9 @@ public class KnowledgeChatController {
         } catch (IllegalArgumentException exception) {
             log.warn("Knowledge embeddings cannot be compared: {}", exception.getMessage());
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Knowledge embeddings cannot be compared. Re-ingest the documents.");
+        } catch (DataAccessException exception) {
+            log.warn("Knowledge database unavailable: {}", exception.getClass().getSimpleName());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Knowledge database unavailable.");
         } catch (RuntimeException exception) {
             log.warn("Knowledge chat failed ({}).", exception.getClass().getSimpleName());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Knowledge chat is temporarily unavailable.");

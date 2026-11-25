@@ -14,9 +14,9 @@ public class EmbeddingService {
     private static final Logger log = LoggerFactory.getLogger(EmbeddingService.class);
     private final EmbeddingModel embeddingModel;
     private final PdfReader pdfReader;
-    private final InMemoryVectorStore store;
+    private final KnowledgeVectorStore store;
 
-    public EmbeddingService(EmbeddingModel embeddingModel, PdfReader pdfReader, InMemoryVectorStore store) {
+    public EmbeddingService(EmbeddingModel embeddingModel, PdfReader pdfReader, KnowledgeVectorStore store) {
         this.embeddingModel = embeddingModel;
         this.pdfReader = pdfReader;
         this.store = store;
@@ -50,11 +50,11 @@ public class EmbeddingService {
 
     public SearchResponse search(String query, int topK, Double threshold) {
         long start = System.nanoTime();
-        List<VectorDocument> snapshot = store.getAll();
-        List<SearchResult> results = snapshot.isEmpty() ? List.of() : store.search(snapshot, generateEmbedding(query), topK, threshold);
+        int count = store.count();
+        List<SearchResult> results = count == 0 ? List.of() : store.search(generateEmbedding(query), topK, threshold);
         long elapsed = (System.nanoTime() - start) / 1_000_000;
-        log.info("Search compared {} vectors and returned {} matches in {} ms", snapshot.size(), results.size(), elapsed);
-        return new SearchResponse(query, snapshot.size(), results.size(), elapsed, results);
+        log.info("Search checked {} stored vectors and returned {} matches in {} ms", count, results.size(), elapsed);
+        return new SearchResponse(query, count, results.size(), elapsed, results);
     }
 
     public record IngestionResult(int documents, int dimensions, long executionTimeMs) {}

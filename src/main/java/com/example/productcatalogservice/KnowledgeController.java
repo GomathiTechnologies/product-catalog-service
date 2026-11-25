@@ -6,6 +6,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +17,9 @@ import org.springframework.web.server.ResponseStatusException;
 public class KnowledgeController {
     private static final Logger log = LoggerFactory.getLogger(KnowledgeController.class);
     private final EmbeddingService service;
-    private final InMemoryVectorStore store;
+    private final KnowledgeVectorStore store;
 
-    public KnowledgeController(EmbeddingService service, InMemoryVectorStore store) {
+    public KnowledgeController(EmbeddingService service, KnowledgeVectorStore store) {
         this.service = service;
         this.store = store;
     }
@@ -31,6 +32,9 @@ public class KnowledgeController {
         } catch (IOException exception) {
             log.warn("Failed to read knowledge base: {}", exception.getClass().getSimpleName());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to read knowledge base");
+        } catch (DataAccessException exception) {
+            log.warn("Knowledge database unavailable: {}", exception.getClass().getSimpleName());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Knowledge database unavailable; previous documents retained");
         } catch (RuntimeException exception) {
             log.warn("Knowledge ingestion failed: {}", exception.getClass().getSimpleName());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Unable to generate embeddings; previous documents retained");
@@ -64,6 +68,9 @@ public class KnowledgeController {
         } catch (IllegalArgumentException exception) {
             log.warn("Embedding comparison failed: {}", exception.getMessage());
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Embeddings cannot be compared; re-ingest with the current model");
+        } catch (DataAccessException exception) {
+            log.warn("Knowledge database unavailable: {}", exception.getClass().getSimpleName());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Knowledge database unavailable");
         } catch (RuntimeException exception) {
             log.warn("Knowledge search failed: {}", exception.getClass().getSimpleName());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Unable to generate query embedding");
