@@ -28,39 +28,39 @@ public class PostgresKnowledgeVectorStore implements KnowledgeVectorStore {
     public void replaceAll(List<VectorDocument> documents) {
         // Validate and serialize before deleting; transaction rollback also protects the old collection.
         var rows = documents.stream().map(doc -> new Row(doc.id(), doc.text(), json(doc.metadata()), vector(doc.embedding()))).toList();
-        jdbc.update("DELETE FROM knowledge_vectors");
+        jdbc.update("DELETE FROM public.knowledge_vectors");
         for (Row row : rows) {
-            jdbc.update("INSERT INTO knowledge_vectors (id, content, metadata, embedding) VALUES (?, ?, CAST(? AS jsonb), CAST(? AS vector))",
+            jdbc.update("INSERT INTO public.knowledge_vectors (id, content, metadata, embedding) VALUES (?, ?, CAST(? AS jsonb), CAST(? AS vector))",
                     row.id(), row.text(), row.metadata(), row.embedding());
         }
     }
 
     @Override
     public List<VectorDocument> getAll() {
-        return jdbc.query("SELECT id, content, metadata::text, embedding::text FROM knowledge_vectors ORDER BY id", (rs, row) ->
+        return jdbc.query("SELECT id, content, metadata::text, embedding::text FROM public.knowledge_vectors ORDER BY id", (rs, row) ->
                 new VectorDocument(rs.getString(1), rs.getString(2), metadata(rs.getString(3)), parseVector(rs.getString(4))));
     }
 
     @Override
     public Optional<VectorDocument> getById(String id) {
-        return jdbc.query("SELECT id, content, metadata::text, embedding::text FROM knowledge_vectors WHERE id = ?", (rs, row) ->
+        return jdbc.query("SELECT id, content, metadata::text, embedding::text FROM public.knowledge_vectors WHERE id = ?", (rs, row) ->
                 new VectorDocument(rs.getString(1), rs.getString(2), metadata(rs.getString(3)), parseVector(rs.getString(4))), id).stream().findFirst();
     }
 
     @Override
     public int count() {
-        Integer count = jdbc.queryForObject("SELECT count(*) FROM knowledge_vectors", Integer.class);
+        Integer count = jdbc.queryForObject("SELECT count(*) FROM public.knowledge_vectors", Integer.class);
         return count == null ? 0 : count;
     }
 
     @Override
     @Transactional
-    public int clear() { return jdbc.update("DELETE FROM knowledge_vectors"); }
+    public int clear() { return jdbc.update("DELETE FROM public.knowledge_vectors"); }
 
     @Override
     public List<SearchResult> search(float[] query, int topK, Double threshold) {
         String sql = "SELECT id, content, metadata::text, 1 - (embedding <=> CAST(? AS vector)) AS score "
-                + "FROM knowledge_vectors WHERE (CAST(? AS double precision) IS NULL OR 1 - (embedding <=> CAST(? AS vector)) >= ?) "
+                + "FROM public.knowledge_vectors WHERE (CAST(? AS double precision) IS NULL OR 1 - (embedding <=> CAST(? AS vector)) >= ?) "
                 + "ORDER BY embedding <=> CAST(? AS vector) LIMIT ?";
         String value = vector(query);
         return jdbc.query(sql, (rs, row) -> new SearchResult(rs.getString(1), rs.getString(2), metadata(rs.getString(3)), rs.getDouble(4)),
