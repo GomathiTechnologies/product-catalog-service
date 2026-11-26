@@ -28,9 +28,21 @@ The response contains an order ID, the supplied product ID, a sample name and pr
 
 ## MCP server
 
-The service exposes `addToCart` and `getProvinceProducts` to MCP clients through Spring AI's WebMVC SSE transport. Start the service as described below and configure an SSE-compatible MCP client with `http://localhost:8081/sse` (use the service host in place of `localhost` for remote clients). The server supplies its message endpoint to the client during connection. Both operations use the same sample data and behavior as the HTTP and chat tools. Spring AI 1.0 uses SSE here; clients that support only Streamable HTTP cannot connect to this endpoint.
+The service exposes `addToCart`, `getProvinceProducts`, and `scheduleInstallation` to MCP clients through Spring AI's WebMVC SSE transport. Start the service as described below and configure an SSE-compatible MCP client with `http://localhost:8081/sse` (use the service host in place of `localhost` for remote clients). The server supplies its message endpoint to the client during connection. These tools use the same sample behavior as their HTTP endpoints. Spring AI 1.0 uses SSE here; clients that support only Streamable HTTP cannot connect to this endpoint.
 
 The MCP endpoint has no authentication or authorization. Keep it on a trusted network, or put authentication and transport security in front of the service before exposing it publicly. The service still requires its existing OpenAI and PostgreSQL configuration at startup.
+
+## Sample installation scheduling
+
+Schedule a sample installation with a date in `YYYY-MM-DD` format and a 24-hour time in `HH:mm` format:
+
+```sh
+curl -X POST http://localhost:8081/schedule/installation \
+  -H 'Content-Type: application/json' \
+  -d '{"date":"2030-05-20","time":"14:30"}'
+```
+
+The response contains `success`, `date`, `time`, and a message. Missing or invalid dates or times return HTTP 400. The same `scheduleInstallation` tool is available to MCP clients. This is a sample confirmation: it does not check availability, store an appointment, specify a time zone, or book an installation.
 
 ## Embedding endpoint
 
