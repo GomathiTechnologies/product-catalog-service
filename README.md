@@ -24,7 +24,13 @@ curl -X POST http://localhost:8081/api/cart/add \
   -d '{"productId":"internet-500"}'
 ```
 
-The response contains an order ID, the supplied product ID, a sample name and price, and a total. The name and price are fixed examples: the tool does not look up products, persist a cart, or place an order. Missing or blank product IDs return HTTP 400. The tool is registered with the Spring AI chat client; it does not require an MCP server.
+The response contains an order ID, the supplied product ID, a sample name and price, and a total. The name and price are fixed examples: the tool does not look up products, persist a cart, or place an order. Missing or blank product IDs return HTTP 400. The tool is registered with the Spring AI chat client and exposed through the MCP server.
+
+## MCP server
+
+The service exposes `addToCart` and `getProvinceProducts` to MCP clients through Spring AI's WebMVC SSE transport. Start the service as described below and configure an SSE-compatible MCP client with `http://localhost:8081/sse` (use the service host in place of `localhost` for remote clients). The server supplies its message endpoint to the client during connection. Both operations use the same sample data and behavior as the HTTP and chat tools. Spring AI 1.0 uses SSE here; clients that support only Streamable HTTP cannot connect to this endpoint.
+
+The MCP endpoint has no authentication or authorization. Keep it on a trusted network, or put authentication and transport security in front of the service before exposing it publicly. The service still requires its existing OpenAI and PostgreSQL configuration at startup.
 
 ## Embedding endpoint
 
